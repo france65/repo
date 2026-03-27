@@ -111,7 +111,7 @@ const parseNonNegativeInt = (value?: string | null, max = Number.MAX_SAFE_INTEGE
   if (!Number.isFinite(parsed) || parsed < 0) return null;
   return Math.min(max, Math.floor(parsed));
 };
-const FINAL_IMAGE_RENDERER_CACHE_VERSION = 'poster-backdrop-logo-thumbnail-v35';
+const FINAL_IMAGE_RENDERER_CACHE_VERSION = 'poster-backdrop-logo-thumbnail-v37';
 const TMDB_CACHE_TTL_MS = parseCacheTtlMs(
   process.env.ERDB_TMDB_CACHE_TTL_MS,
   3 * 24 * 60 * 60 * 1000,
@@ -378,6 +378,7 @@ type RatingBadge = {
   value: string;
   iconUrl: string;
   accentColor: string;
+  iconCornerRadius?: number;
 };
 type OutputFormat = 'png' | 'jpeg' | 'webp';
 const RATING_PROVIDER_META = new Map(
@@ -1745,12 +1746,18 @@ const isTmdbSourceImageUrl = (value: string) => {
   }
 };
 
-const buildProviderIconStorageKey = (iconUrl: string) => `icons/${sha1Hex(iconUrl)}.png`;
+const buildProviderIconStorageKey = (iconUrl: string, iconCornerRadius = 0) =>
+  `icons/${sha1Hex(`${iconUrl}|r:${iconCornerRadius}`)}.png`;
 
-const readProviderIconFromStorage = async (iconUrl: string): Promise<string | null> => {
+const readProviderIconFromStorage = async (
+  iconUrl: string,
+  iconCornerRadius = 0
+): Promise<string | null> => {
   if (!isObjectStorageConfigured()) return null;
   try {
-    const payload = await getCachedImageFromObjectStorage(buildProviderIconStorageKey(iconUrl));
+    const payload = await getCachedImageFromObjectStorage(
+      buildProviderIconStorageKey(iconUrl, iconCornerRadius)
+    );
     if (!payload) return null;
     const buffer = Buffer.from(payload.body);
     const contentType = toImageContentType(payload.contentType);
@@ -1760,10 +1767,14 @@ const readProviderIconFromStorage = async (iconUrl: string): Promise<string | nu
   }
 };
 
-const writeProviderIconToStorage = async (iconUrl: string, buffer: Buffer) => {
+const writeProviderIconToStorage = async (
+  iconUrl: string,
+  buffer: Buffer,
+  iconCornerRadius = 0
+) => {
   if (!isObjectStorageConfigured()) return;
   try {
-    await putCachedImageToObjectStorage(buildProviderIconStorageKey(iconUrl), {
+    await putCachedImageToObjectStorage(buildProviderIconStorageKey(iconUrl, iconCornerRadius), {
       body: bufferToArrayBuffer(buffer),
       contentType: 'image/png',
       cacheControl: buildSourceImageFallbackCacheControl(PROVIDER_ICON_CACHE_TTL_MS),
@@ -1885,25 +1896,29 @@ const getSourceImagePayload = async (
   });
 };
 
-const getProviderIconDataUri = async (iconUrl: string): Promise<string | null> => {
+const getProviderIconDataUri = async (
+  iconUrl: string,
+  iconCornerRadius = 0
+): Promise<string | null> => {
   const normalizedIconUrl = iconUrl.trim();
   if (!normalizedIconUrl) return null;
   if (normalizedIconUrl.startsWith('data:')) {
     return normalizedIconUrl;
   }
+  const cacheKey = `${normalizedIconUrl}|r:${iconCornerRadius}`;
 
-  const localCached = getMetadata<string>(normalizedIconUrl);
+  const localCached = getMetadata<string>(cacheKey);
   if (localCached) {
     return localCached;
   }
 
-  return withDedupe(providerIconInFlight, normalizedIconUrl, async () => {
-    const warmLocal = getMetadata<string>(normalizedIconUrl);
+  return withDedupe(providerIconInFlight, cacheKey, async () => {
+    const warmLocal = getMetadata<string>(cacheKey);
     if (warmLocal) return warmLocal;
 
-    const storageCached = await readProviderIconFromStorage(normalizedIconUrl);
+    const storageCached = await readProviderIconFromStorage(normalizedIconUrl, iconCornerRadius);
     if (storageCached) {
-      setMetadata(normalizedIconUrl, storageCached, PROVIDER_ICON_CACHE_TTL_MS);
+      setMetadata(cacheKey, storageCached, PROVIDER_ICON_CACHE_TTL_MS);
       return storageCached;
     }
 
@@ -1913,19 +1928,25 @@ const getProviderIconDataUri = async (iconUrl: string): Promise<string | null> =
 
       const sourceBuffer = Buffer.from(await response.arrayBuffer());
       const sharp = await getSharpFactory();
-      const outputBuffer = await sharp(sourceBuffer)
+      let pipeline = sharp(sourceBuffer)
         .trim()
         .resize(96, 96, {
           fit: 'contain',
           background: { r: 0, g: 0, b: 0, alpha: 0 },
-        })
-        .png({ compressionLevel: 6 })
-        .toBuffer();
+        });
+      if (iconCornerRadius > 0) {
+        const radius = Math.max(1, Math.min(48, Math.round(iconCornerRadius)));
+        const roundedMask = Buffer.from(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><rect width="96" height="96" rx="${radius}" ry="${radius}" fill="white"/></svg>`
+        );
+        pipeline = pipeline.composite([{ input: roundedMask, blend: 'dest-in' }]);
+      }
+      const outputBuffer = await pipeline.png({ compressionLevel: 6 }).toBuffer();
       const outputContentType = 'image/png';
 
       const dataUri = `data:${outputContentType};base64,${outputBuffer.toString('base64')}`;
-      setMetadata(normalizedIconUrl, dataUri, PROVIDER_ICON_CACHE_TTL_MS);
-      await writeProviderIconToStorage(normalizedIconUrl, outputBuffer);
+      setMetadata(cacheKey, dataUri, PROVIDER_ICON_CACHE_TTL_MS);
+      await writeProviderIconToStorage(normalizedIconUrl, outputBuffer, iconCornerRadius);
 
       return dataUri;
     } catch {
@@ -2620,6 +2641,7 @@ const buildBadgeSvg = ({
   accentColor,
   monogram,
   iconDataUri,
+  iconCornerRadius = 0,
   value,
   ratingStyle,
   compactText = false,
@@ -2633,6 +2655,7 @@ const buildBadgeSvg = ({
   accentColor: string;
   monogram: string;
   iconDataUri?: string | null;
+  iconCornerRadius?: number;
   value: string;
   ratingStyle: RatingStyle;
   compactText?: boolean;
@@ -2663,19 +2686,21 @@ const buildBadgeSvg = ({
     ratingStyle === 'plain'
       ? ''
       : ratingStyle === 'square'
-        ? `<rect x="${iconX + 0.75}" y="${iconY + 0.75}" width="${Math.max(0, iconSize - 1.5)}" height="${Math.max(0, iconSize - 1.5)}" rx="${iconRadius}" fill="rgb(10,10,10)" />`
+        ? `<rect x="${iconX + 0.75}" y="${iconY + 0.75}" width="${Math.max(0, iconSize - 1.5)}" height="${Math.max(0, iconSize - 1.5)}" rx="${Math.max(4, iconCornerRadius || iconRadius)}" fill="rgb(10,10,10)" />`
         : `<circle cx="${iconCx}" cy="${iconCy}" r="${iconRadius}" fill="${accentColor}" stroke="rgba(255,255,255,0.45)" />`;
   const iconClipPath =
     ratingStyle === 'plain'
       ? ''
       : ratingStyle === 'square'
-        ? `<rect x="${iconX + 1.5}" y="${iconY + 1.5}" width="${Math.max(0, iconSize - 3)}" height="${Math.max(0, iconSize - 3)}" rx="${Math.max(4, iconRadius - 1)}" />`
+        ? `<rect x="${iconX + 1.5}" y="${iconY + 1.5}" width="${Math.max(0, iconSize - 3)}" height="${Math.max(0, iconSize - 3)}" rx="${Math.max(4, iconCornerRadius || iconRadius - 1)}" />`
         : `<circle cx="${iconCx}" cy="${iconCy}" r="${Math.max(1, iconRadius - 1)}" />`;
   const iconBorder =
     ratingStyle === 'plain'
       ? ''
       : ratingStyle === 'square'
-        ? ''
+        ? iconCornerRadius > 0
+          ? `<rect x="${iconX + 1.5}" y="${iconY + 1.5}" width="${Math.max(0, iconSize - 3)}" height="${Math.max(0, iconSize - 3)}" rx="${Math.max(4, iconCornerRadius || iconRadius - 1)}" fill="none" stroke="rgba(255,255,255,0.18)" />`
+          : ''
         : `<circle cx="${iconCx}" cy="${iconCy}" r="${iconRadius}" fill="none" stroke="rgba(255,255,255,0.45)" />`;
   const outerRect =
     ratingStyle === 'plain'
@@ -2740,7 +2765,10 @@ const renderWithSharp = async (
     if (input.badges.length > 0) {
       const iconEntries = await Promise.all(
         input.badges.map(async (badge) => {
-          const iconDataUri = await getProviderIconDataUri(badge.iconUrl);
+          const iconDataUri = await getProviderIconDataUri(
+            badge.iconUrl,
+            badge.iconCornerRadius || 0
+          );
           return [badge.key, iconDataUri] as const;
         })
       );
@@ -2909,6 +2937,7 @@ const renderWithSharp = async (
           accentColor: entry.badge.accentColor,
           monogram,
           iconDataUri: iconByProvider.get(entry.badge.key) || null,
+          iconCornerRadius: entry.badge.iconCornerRadius,
           value: entry.badge.value,
           ratingStyle: input.ratingStyle,
           compactText: compactPosterRowText,
@@ -2952,6 +2981,7 @@ const renderWithSharp = async (
                 accentColor: entry.badge.accentColor,
                 monogram,
                 iconDataUri: iconByProvider.get(entry.badge.key) || null,
+                iconCornerRadius: entry.badge.iconCornerRadius,
                 value: entry.badge.value,
                 ratingStyle: input.ratingStyle,
                 compactText: compactPosterRowText,
@@ -2987,6 +3017,7 @@ const renderWithSharp = async (
               accentColor: entry.badge.accentColor,
               monogram,
               iconDataUri: iconByProvider.get(entry.badge.key) || null,
+              iconCornerRadius: entry.badge.iconCornerRadius,
               value: entry.badge.value,
               ratingStyle: input.ratingStyle,
               compactText: compactPosterRowText,
@@ -3034,6 +3065,7 @@ const renderWithSharp = async (
           accentColor: entry.badge.accentColor,
           monogram,
           iconDataUri: iconByProvider.get(entry.badge.key) || null,
+          iconCornerRadius: entry.badge.iconCornerRadius,
           value: entry.badge.value,
           ratingStyle: input.ratingStyle,
           compactText: compactPosterRowText,
@@ -3107,6 +3139,7 @@ const renderWithSharp = async (
         accentColor: badge.accentColor,
         monogram,
         iconDataUri: iconByProvider.get(badge.key) || null,
+        iconCornerRadius: badge.iconCornerRadius,
         value: badge.value,
         ratingStyle: input.ratingStyle,
       });
@@ -3182,6 +3215,7 @@ const renderWithSharp = async (
           accentColor: badge.accentColor,
           monogram,
           iconDataUri: iconByProvider.get(badge.key) || null,
+          iconCornerRadius: badge.iconCornerRadius,
           value: badge.value,
           ratingStyle: input.ratingStyle,
         });
@@ -5230,6 +5264,7 @@ export async function GET(
           value,
           iconUrl,
           accentColor: meta.accentColor,
+          iconCornerRadius: 'iconCornerRadius' in meta ? meta.iconCornerRadius : undefined,
         });
       }
       if (ratingBadges.length === 0 && streamBadges.length === 0 && !posterTitleText && !posterLogoUrl) {

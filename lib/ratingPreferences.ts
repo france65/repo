@@ -14,8 +14,9 @@ export const RATING_PROVIDER_OPTIONS = [
   {
     id: 'imdb',
     label: 'IMDb',
-    iconUrl: 'https://static.vecteezy.com/system/resources/previews/049/116/727/non_2x/imdb-logo-transparent-background-free-png.png',
+    iconUrl: 'https://static0.anpoimages.com/wordpress/wp-content/uploads/2011/07/hi-512-3.png',
     accentColor: '#f5c518',
+    iconCornerRadius: 8,
   },
   {
     id: 'tomatoes',
@@ -59,6 +60,7 @@ export const RATING_PROVIDER_OPTIONS = [
     label: 'SIMKL',
     iconUrl: 'https://www.google.com/s2/favicons?domain=simkl.com&sz=64',
     accentColor: '#00b4ff',
+    iconCornerRadius: 16,
   },
   {
     id: 'rogerebert',
