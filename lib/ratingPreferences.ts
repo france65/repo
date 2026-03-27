@@ -51,7 +51,7 @@ export const RATING_PROVIDER_OPTIONS = [
   {
     id: 'trakt',
     label: 'Trakt',
-    iconUrl: 'https://www.google.com/s2/favicons?domain=trakt.tv&sz=64',
+    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/3d/Trakt.tv-favicon.svg',
     accentColor: '#ed1c24',
   },
   {
