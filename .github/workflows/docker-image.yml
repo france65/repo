@@ -6,7 +6,13 @@ on:
       - main
     tags:
       - 'v*'
+    paths-ignore:
+      - README.md
+      - .github/README.md
   pull_request:
+    paths-ignore:
+      - README.md
+      - .github/README.md
   workflow_dispatch:
 
 env:
