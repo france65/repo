@@ -27,15 +27,16 @@ const previousTag = existingTags.find((tag) => tag !== currentTag) || "";
 const targetRef = tagExists ? currentTag : "HEAD";
 const commitRange = previousTag ? `${previousTag}..${targetRef}` : targetRef;
 
-const commits = runGit(["log", "--no-merges", "--pretty=format:%H%x09%s", commitRange])
-  .split(/\r?\n/)
-  .map((line) => line.trim())
+const commits = runGit(["log", "--no-merges", "--pretty=format:%H%x1f%s%x1f%b%x1e", commitRange])
+  .split("\x1e")
+  .map((entry) => entry.trim())
   .filter(Boolean)
-  .map((line) => {
-    const [sha, ...subjectParts] = line.split("\t");
+  .map((entry) => {
+    const [sha, subject = "", description = ""] = entry.split("\x1f");
     return {
       sha,
-      subject: subjectParts.join("\t").trim(),
+      subject: subject.trim(),
+      description: normalizeCommitDescription(description),
     };
   })
   .filter((commit) => commit.sha && commit.subject)
@@ -127,12 +128,20 @@ function shouldIgnoreCommit(subject) {
 
 function formatCommit(commit, baseUrl) {
   const shortSha = commit.sha.slice(0, 7);
+  const summaryLine = !baseUrl
+    ? `- ${commit.subject} (${shortSha})`
+    : `- ${commit.subject} ([${shortSha}](${baseUrl}/commit/${commit.sha}))`;
 
-  if (!baseUrl) {
-    return `- ${commit.subject} (${shortSha})`;
+  if (!commit.description) {
+    return summaryLine;
   }
 
-  return `- ${commit.subject} ([${shortSha}](${baseUrl}/commit/${commit.sha}))`;
+  const descriptionLines = commit.description
+    .split("\n")
+    .map((line) => (line ? `  ${line}` : ""))
+    .join("\n");
+
+  return `${summaryLine}\n${descriptionLines}`;
 }
 
 function upsertChangelog(existingContent, currentVersion, section) {
@@ -169,6 +178,16 @@ function upsertChangelog(existingContent, currentVersion, section) {
 
 function compactBlankLines(value) {
   return value.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function normalizeCommitDescription(value) {
+  return compactBlankLines(
+    value
+      .replace(/\r/g, "")
+      .split("\n")
+      .map((line) => line.trim())
+      .join("\n"),
+  );
 }
 
 function ensureTrailingNewline(value) {

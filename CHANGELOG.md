@@ -5,6 +5,11 @@ All notable changes to this project are documented in this file.
 ## [0.1.24](https://github.com/realbestia1/erdb/compare/v0.1.23...v0.1.24) - 2026-03-31
 
 - Bump to v0.1.24 and add configurable logo rating limits ([02885e0](https://github.com/realbestia1/erdb/commit/02885e0e093ff053ec086fe8e1f5255df965ca86))
+  - bump package version to 0.1.24
+  - add logoRatingsMax so logo renders can cap the maximum number of rating badges
+  - expose logoRatingsMax across the renderer, UI, config string, proxy config, and AiOMetadata patterns
+  - preserve empty rating params so disabling all providers correctly bypasses image rendering instead of falling back to all ratings
+  - update .github README and AI integration prompt to document the new logoRatingsMax behavior
 
 ## [0.1.23](https://github.com/realbestia1/erdb/compare/v0.1.22...v0.1.23) - 2026-03-31
 
