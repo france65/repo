@@ -984,7 +984,7 @@ export function HomePageView({ refs, state, derived, actions }: HomePageViewProp
                   {canConfigureCatalogs && !isAiometadataProxyManifest && !isCinemetaProxyManifest && (
                     <div className="space-y-2">
                       <div>
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 block mb-1.5">Series Metadata Provider</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 block mb-1.5">Addon Metadata Provider</span>
                         <div className="flex flex-wrap gap-1.5">
                           {PROXY_SERIES_METADATA_PROVIDER_OPTIONS.map((option) => (
                             <button
