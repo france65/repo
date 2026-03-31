@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.1.15](https://github.com/realbestia1/erdb/compare/v0.1.14...v0.1.15) - 2026-03-31
+
+- Update README.md ([e502d73](https://github.com/realbestia1/erdb/commit/e502d73a7dd6e01310001c867def6594e57909ab))
+- Update README.md ([e7fa349](https://github.com/realbestia1/erdb/commit/e7fa34903fd92f44d7d0a95bf5a77bf6941aab55))
+- Update README.md ([818b22e](https://github.com/realbestia1/erdb/commit/818b22e85015ac86e8dc80ca7ea7b85e2c9521da))
+- Update README.md ([55f2074](https://github.com/realbestia1/erdb/commit/55f20748b851df504dcc2ffbc626b45ee6b74ff1))
+- . ([bd32aaa](https://github.com/realbestia1/erdb/commit/bd32aaaef5c391ae0cbcd5b342b94aca8e6069e6))
+- Update README.md ([5de6f55](https://github.com/realbestia1/erdb/commit/5de6f55ee95ccc6dbc8e514ab6f514955312ac02))
+
 ## [0.1.14](https://github.com/realbestia1/erdb/compare/v0.1.13...v0.1.14) - 2026-03-31
 
 - Prepare automated package-based releases for v0.1.14 ([5d04734](https://github.com/realbestia1/erdb/commit/5d047343fd62de396b308a90faeb177bd5a59ad7))
