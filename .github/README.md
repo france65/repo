@@ -3,6 +3,7 @@
 ERDB generates poster/backdrop/logo/thumbnail images with dynamic ratings on-the-fly.
 
 [![Release](https://img.shields.io/github/v/release/realbestia1/erdb?display_name=tag&sort=semver&style=for-the-badge)](https://github.com/realbestia1/erdb/releases)
+[![Website](https://img.shields.io/badge/Website-easyratingsdb.com-0F766E?style=for-the-badge&logo=googlechrome&logoColor=white)](https://easyratingsdb.com/)
 [![GHCR](https://img.shields.io/badge/GHCR-ghcr.io%2Frealbestia1%2Ferdb-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://github.com/realbestia1/erdb/pkgs/container/erdb)
 [![License](https://img.shields.io/github/license/realbestia1/erdb?style=for-the-badge)](https://github.com/realbestia1/erdb/blob/main/LICENSE)
 
