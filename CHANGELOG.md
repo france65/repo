@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.2.1](https://github.com/realbestia1/erdb/compare/v0.2.0...v0.2.1) - 2026-04-01
+
+- implement robust fetch with retries for TMDB metadata ([76caef7](https://github.com/realbestia1/erdb/commit/76caef7a97c37bf983b48a0081becfd54f360c9a))
+  Added lib/request.ts: Introduced a fetchWithRetry utility to handle transient network failures.
+  Improved Resilience: Implemented automatic 3-attempt retries with exponential backoff for ConnectTimeoutError and other networking issues.
+  Optimized Timeouts: Set an 8-second timeout per request attempt to ensure faster recovery and better responsiveness.
+  Route Integration: Updated the main metadata route (app/[type]/[id]/route.tsx) and the proxy layer to use the new robust fetching mechanism.
+  Bug Fix: Resolved frequent TypeError: fetch failed caused by TMDB connection timeouts.
+
 ## [0.2.0](https://github.com/realbestia1/erdb/compare/v0.1.27...v0.2.0) - 2026-04-01
 
 - rework web panel UI for a more modern, minimal workspace feel ([f8e861d](https://github.com/realbestia1/erdb/commit/f8e861d2aae67d7360ebe8e4298e5a2828791f26))
