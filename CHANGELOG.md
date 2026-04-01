@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.2.3](https://github.com/realbestia1/erdb/compare/v0.2.2...v0.2.3) - 2026-04-01
+
+- bump to v0.2.3, keep logo ratings on one row, and restore standalone CSS in local start txt ([46e8890](https://github.com/realbestia1/erdb/commit/46e8890ae511090dc5012b4488e57a52214fb818))
+  - bump package version from 0.2.2 to 0.2.3
+  - keep logo ratings on a single row and extend the canvas width instead of wrapping to multiple lines
+  - improve logo badge spacing and preserve better readability on very wide logos
+  - fix local production startup so the standalone server also sees `.next/static` and `public`, restoring CSS/assets when using `npm run build` + `npm run start`
+  - align the frontend version fallback with v0.2.3
+
 ## [0.2.2](https://github.com/realbestia1/erdb/compare/v0.2.1...v0.2.2) - 2026-04-01
 
 - bump to v0.2.2 and remove mobile configurator nested scrolling ([0e54627](https://github.com/realbestia1/erdb/commit/0e546273a3b85e382817c59c7645bb9bbb145b05))
