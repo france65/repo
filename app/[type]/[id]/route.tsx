@@ -143,7 +143,7 @@ const parseNonNegativeInt = (value?: string | null, max = Number.MAX_SAFE_INTEGE
   if (!Number.isFinite(parsed) || parsed < 0) return null;
   return Math.min(max, Math.floor(parsed));
 };
-const FINAL_IMAGE_RENDERER_CACHE_VERSION = 'poster-backdrop-logo-thumbnail-v58';
+const FINAL_IMAGE_RENDERER_CACHE_VERSION = 'poster-backdrop-logo-thumbnail-v59';
 const TMDB_CACHE_TTL_MS = parseCacheTtlMs(
   process.env.ERDB_TMDB_CACHE_TTL_MS,
   3 * 24 * 60 * 60 * 1000,
@@ -1423,6 +1423,7 @@ const pickPosterTitleFromMedia = (
   const pickLocalizedTitleFromTranslations = (source: any, language: string | null | undefined) => {
     const normalizedLanguage = normalizeTmdbLanguageCode(language);
     if (!normalizedLanguage) return null;
+    const normalizedLanguageBase = getTmdbLanguageBase(normalizedLanguage);
 
     const translations = Array.isArray(source?.translations?.translations)
       ? source.translations.translations
@@ -1434,7 +1435,7 @@ const pickPosterTitleFromMedia = (
     );
     const baseMatch = !exactMatch
       ? translations.find(
-        (entry: any) => normalizeTmdbLanguageCode(entry?.iso_639_1) === normalizedLanguage
+        (entry: any) => getTmdbLanguageBase(entry?.iso_639_1) === normalizedLanguageBase
       )
       : null;
     const selected = exactMatch || baseMatch;
